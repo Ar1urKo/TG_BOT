@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌸 Трекер привычек</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3">
+    <style>
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin-top: 8px;
+        }
+        .progress {
+            height: 100%;
+            background: #4caf50;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="{{ url_for('static', filename='logo.png') }}?v=3" alt="Logo" class="logo">
+        <div>
+            <h1 class="title">Трекер привычек</h1>
+            <p class="subtitle">Создай свою идеальную рутину</p>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" data-tab="habits">Привычки</div>
+        <div class="tab" data-tab="completed">Завершённые</div>
+        <div class="tab" data-tab="stats">Статистика</div>
+    </div>
+
+    <div class="tab-content active" id="habits-tab">
+        <div class="habit-form">
+            <div class="form-group">
+                <label for="habit-name" class="form-label">Новая привычка</label>
+                <input type="text" id="habit-name" class="form-input" placeholder="Бегать по утрам">
+            </div>
+            
+            <div class="form-group">
+                <label for="habit-time" class="form-label">Время напоминания</label>
+                <input type="time" id="habit-time" class="form-input">
+            </div>
+            
+            <button class="btn btn-primary" id="add-habit">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 4V20M4 12H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Добавить привычку
+            </button>
+        </div>
+
+        <div class="habits-list" id="habits-list">
+            <div class="empty-state">
+                <svg class="empty-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 4V20M4 12H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <p>У вас пока нет привычек</p>
+                <p style="margin-top: 8px; font-size: 14px;">Добавьте первую привычку, чтобы начать!</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="completed-tab">
+        <div class="completed-list" id="completed-list">
+            <div class="empty-state">
+                <svg class="empty-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 4V20M4 12H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <p>У вас нет завершённых привычек</p>
+                <p style="margin-top: 8px; font-size: 14px;">Завершите хотя бы одну привычку!</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="stats-tab">
+        <div class="stats-container">
+            <div class="stats-header">
+                <h3 class="stats-title">Ваша статистика</h3>
+                <button class="btn btn-primary" id="refresh-stats" style="padding: 10px 16px; font-size: 14px;">
+                    Обновить
+                </button>
+            </div>
+            <div class="stats-content" id="stats-content">
+                <div class="empty-state">
+                    <svg class="empty-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 17L4 12L9 7M15 7L20 12L15 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <p>Нет данных для отображения</p>
+                    <p style="margin-top: 8px; font-size: 14px;">Выполните несколько привычек, чтобы увидеть статистику</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        const tg = window.Telegram.WebApp;
+        
+        // Адаптация темы под Telegram
+        document.body.classList.add(tg.colorScheme === 'dark' ? 'tg-theme-dark' : 'tg-theme-light');
+        
+        tg.onEvent('themeChanged', () => {
+            document.body.classList.remove('tg-theme-dark', 'tg-theme-light');
+            document.body.classList.add(tg.colorScheme === 'dark' ? 'tg-theme-dark' : 'tg-theme-light');
+        });
+
+        tg.expand();
+        tg.enableClosingConfirmation();
+        
+        // Элементы DOM
+        const habitNameInput = document.getElementById('habit-name');
+        const habitTimeInput = document.getElementById('habit-time');
+        const addHabitBtn = document.getElementById('add-habit');
+        const habitsList = document.getElementById('habits-list');
+        const completedList = document.getElementById('completed-list');
+        const refreshStatsBtn = document.getElementById('refresh-stats');
+        const statsContent = document.getElementById('stats-content');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        // Загружаем данные
+        let habits = JSON.parse(localStorage.getItem('habits')) || [];
+        let completedHabits = JSON.parse(localStorage.getItem('completedHabits')) || [];
+        let stats = JSON.parse(localStorage.getItem('stats')) || {
+            completed: 0,
+            total: 0,
+            history: []
+        };
+        const GOAL = 21; // Цель — 21 день для формирования привычки
+
+        // Инициализация вкладок
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+                
+                if (tab.dataset.tab === 'stats') {
+                    renderStats();
+                }
+            });
+        });
+        
+        // Отображаем список привычек с прогресс-баром
+        function renderHabits() {
+            habitsList.innerHTML = '';
+            
+            if (habits.length === 0) {
+                habitsList.innerHTML = ` 
+                    <div class="empty-state">
+                        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 4V20M4 12H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <p>У вас пока нет привычек</p>
+                        <p style="margin-top: 8px; font-size: 14px;">Добавьте первую привычку, чтобы начать!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            habits.forEach((habit, index) => {
+                const progress = habit.progress || 0;
+                const progressPercent = Math.min((progress / GOAL) * 100, 100);
+                const habitItem = document.createElement('div');
+                habitItem.className = 'habit-item';
+                habitItem.innerHTML = `
+                    <div class="habit-info">
+                        <div class="habit-name">${habit.name}</div>
+                        <div class="habit-time">${habit.time}</div>
+                        <div class="progress-bar">
+                            <div class="progress" style="width: ${progressPercent}%"></div>
+                        </div>
+                        <div style="font-size: 12px; margin-top: 4px;">${progress}/${GOAL}</div>
+                    </div>
+                    <div class="habit-actions">
+                        <button class="action-btn check-btn" data-index="${index}">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M5 13L9 17L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn delete-btn" data-index="${index}">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                habitsList.appendChild(habitItem);
+            });
+        }
+        
+        // Отображаем завершённые привычки
+        function renderCompleted() {
+            completedList.innerHTML = '';
+            
+            if (completedHabits.length === 0) {
+                completedList.innerHTML = ` 
+                    <div class="empty-state">
+                        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 4V20M4 12H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <p>У вас нет завершённых привычек</p>
+                        <p style="margin-top: 8px; font-size: 14px;">Завершите хотя бы одну привычку!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            completedHabits.forEach((habit, index) => {
+                const habitItem = document.createElement('div');
+                habitItem.className = 'habit-item';
+                habitItem.innerHTML = `
+                    <div class="habit-info">
+                        <div class="habit-name">${habit.name}</div>
+                        <div class="habit-time">${habit.time}</div>
+                    </div>
+                    <div class="habit-actions">
+                        <button class="action-btn delete-btn" data-index="${index}">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                completedList.appendChild(habitItem);
+            });
+        }
+
+        // Отображаем статистику
+        function renderStats() {
+            statsContent.innerHTML = `
+                <div class="stats-item">
+                    <div class="stats-title">Завершено привычек</div>
+                    <div class="stats-value">${stats.completed}</div>
+                </div>
+                <div class="stats-item">
+                    <div class="stats-title">Всего привычек</div>
+                    <div class="stats-value">${stats.total}</div>
+                </div>
+            `;
+        }
+        
+        // Добавить привычку
+        addHabitBtn.addEventListener('click', () => {
+            const name = habitNameInput.value.trim();
+            const time = habitTimeInput.value.trim();
+
+            if (name && time) {
+                habits.push({ name, time, progress: 0 });
+                stats.total++;
+                localStorage.setItem('habits', JSON.stringify(habits));
+                localStorage.setItem('stats', JSON.stringify(stats));
+
+                tg.sendData(JSON.stringify(habits)); // Отправляем боту
+
+                habitNameInput.value = '';
+                habitTimeInput.value = '';
+
+                renderHabits();
+                renderStats();
+            }
+        });
+
+        // Завершить привычку
+        habitsList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('check-btn')) {
+                const index = e.target.dataset.index;
+                const habit = habits[index];
+                habit.progress = (habit.progress || 0) + 1;
+                if (habit.progress >= GOAL) {
+                    completedHabits.push(habit);
+                    habits.splice(index, 1);
+                    stats.completed++;
+                }
+                
+                localStorage.setItem('habits', JSON.stringify(habits));
+                localStorage.setItem('completedHabits', JSON.stringify(completedHabits));
+                localStorage.setItem('stats', JSON.stringify(stats));
+                
+                renderHabits();
+                renderCompleted();
+                renderStats();
+            }
+        });
+        
+        // Удалить привычку с подтверждением через Telegram
+        let isPopupPending = false;
+
+        habitsList.addEventListener('click', (e) => {
+            const deleteBtn = e.target.closest('.delete-btn');
+            if (deleteBtn && !isPopupPending) {
+                isPopupPending = true;
+                const index = deleteBtn.dataset.index;
+                const habitName = habits[index].name;
+
+                tg.showPopup({
+                    title: 'Удалить привычку?',
+                    message: `Вы уверены, что хотите удалить "${habitName}"?`,
+                    buttons: [
+                        { id: 'delete', type: 'destructive', text: 'Удалить' },
+                        { type: 'cancel', text: 'Отмена' }
+                    ]
+                }, (buttonId) => {
+                    if (buttonId === 'delete') {
+                        habits.splice(index, 1);
+                        localStorage.setItem('habits', JSON.stringify(habits));
+                        tg.sendData(JSON.stringify(habits));
+                        renderHabits();
+                    }
+                    isPopupPending = false; // Сбрасываем флаг после завершения
+                });
+
+                // Сброс флага через 1 секунду, если Telegram не отвечает
+                setTimeout(() => { isPopupPending = false; }, 1000);
+            }
+        });
+        
+        // Удалить завершённую привычку (без подтверждения, как было раньше)
+        completedList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-btn')) {
+                const index = e.target.dataset.index;
+                completedHabits.splice(index, 1);
+                localStorage.setItem('completedHabits', JSON.stringify(completedHabits));
+                renderCompleted();
+            }
+        });
+        
+        // Обновить статистику
+        refreshStatsBtn.addEventListener('click', renderStats);
+        
+        // Начальная отрисовка
+        renderHabits();
+        renderCompleted();
+        renderStats();
+    </script>
+</body>
+</html>

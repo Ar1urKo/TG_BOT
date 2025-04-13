@@ -1,0 +1,362 @@
+
+:root {
+    --primary: #8A2BE2;
+    --primary-light: #9B51E0;
+    --secondary: #FF7F50;
+    --success: #4CAF50;
+    --danger: #FF5252;
+    --text: #2D3436;
+    --text-light: #636E72;
+    --bg: #F5F6FA;
+    --card-bg: #FFFFFF;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --text: #F5F6FA;
+        --text-light: #BDC3C7;
+        --bg: #1E1E1E;
+        --card-bg: #2D3436;
+        --shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    color: var(--text);
+    background: var(--bg);
+    padding: 16px;
+    min-height: 100vh;
+    transition: all 0.3s ease;
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Вкладки */
+.tabs {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.tab {
+    padding: 12px 16px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-light);
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.tab.active {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    border-radius: 3px 3px 0 0;
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Основные элементы */
+.header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 24px;
+    animation: fadeIn 0.6s ease-out;
+}
+
+.logo {
+    width: 48px;
+    height: 48px;
+    margin-right: 12px;
+    border-radius: 12px;
+    object-fit: cover;
+    box-shadow: var(--shadow);
+}
+
+.title {
+    font-size: 22px;
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+    font-size: 14px;
+    color: var(--text-light);
+    margin-top: 4px;
+}
+
+/* Форма добавления */
+.habit-form {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+    animation: fadeIn 0.5s ease-out 0.2s both;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-light);
+}
+
+.form-input {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.2);
+}
+
+/* Кнопки */
+.btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: white;
+}
+
+.btn-primary:active {
+    transform: scale(0.98);
+    animation: pulse 0.5s ease;
+}
+
+.btn-icon {
+    width: 20px;
+    height: 20px;
+}
+
+/* Список привычек */
+.habits-list {
+    display: grid;
+    gap: 12px;
+    animation: fadeIn 0.6s ease-out 0.4s both;
+}
+
+.habit-item {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.habit-item:active {
+    transform: scale(0.98);
+}
+
+.habit-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 6px;
+    background: linear-gradient(to bottom, var(--primary), var(--secondary));
+}
+
+.habit-info {
+    flex: 1;
+    margin-left: 12px;
+}
+
+.habit-name {
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.habit-time {
+    font-size: 13px;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.time-icon {
+    width: 14px;
+    height: 14px;
+    opacity: 0.7;
+}
+
+.habit-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.action-btn:active {
+    transform: scale(0.9);
+}
+
+.delete-btn {
+    color: var(--danger);
+}
+
+.check-btn {
+    color: var(--success);
+}
+
+/* Статистика */
+.stats-container {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    margin-top: 20px;
+}
+
+.stats-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.stats-title {
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.stats-content {
+    margin-top: 10px;
+}
+
+.stats-item {
+    margin-bottom: 15px;
+}
+
+.stats-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: var(--text-light);
+}
+
+.stats-bar {
+    height: 8px;
+    background: var(--bg);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.stats-progress {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    border-radius: 4px;
+    transition: width 0.6s ease;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-light);
+}
+
+.empty-icon {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+/* Адаптация под Telegram */
+.tg-theme-dark {
+    --text: #F5F6FA;
+    --text-light: #BDC3C7;
+    --bg: #1E1E1E;
+    --card-bg: #2D3436;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.tg-theme-light {
+    --text: #2D3436;
+    --text-light: #636E72;
+    --bg: #F5F6FA;
+    --card-bg: #FFFFFF;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}

@@ -1,0 +1,14 @@
+---
+version: null
+meta:
+  environment: python
+  toolchain:
+    name: pip
+    version: 3.11
+build:
+  requirementsPath: Borik/requirements.txt
+run:
+  scriptName: Borik/main.py
+  command: null
+  persistenceMount: /data
+  containerPort: 80
